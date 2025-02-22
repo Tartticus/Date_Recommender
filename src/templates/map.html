@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Restaurants Map</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+  <style>
+    /* Optional: adjust the height of your map */
+    #map {
+      width: 100%;
+      height: 600px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="mb-4">Restaurants Map</h1>
+    <!-- The map_html variable contains the full map HTML from folium -->
+    <div id="map">
+      {{ map_html|safe }}
+    </div>
+    <!-- Optional: Link back to home -->
+    <a href="{{ url_for('home') }}" class="btn btn-primary mt-3">Back Home</a>
+  </div>
+</body>
+</html>
