@@ -1,29 +1,31 @@
 import duckdb
 
-# Connect to an in-memory DuckDB database
+import pandas as pd
 con = duckdb.connect(database='dining')
+places = pd.read_csv(r"C:/Users/Matth/Projects/Date_Recommender/places.csv")
+# Prepare the INSERT statement
+username = "tartticus"
+insert_query = ("""INSERT INTO Restaurants 
+    (RestaurantID, username, Restaurant_Type,Resturant_Name, City,Description,Rating)
+VALUES (?, ?, ?, ?, ?, ?, ?)""")
 
-# Create a table
-con.execute("""
-CREATE TABLE users (
-    user_id INT PRIMARY KEY,
-    date_created DATETIME,
-    username VARCHAR,
-    email VARCHAR
-);
-"""
-)
+for idx, row in places.iterrows():
+  address = row['name'] + row['city']
+  geocode_result = gmaps.geocode(address)
 
-
-con.execute("""
-            Create TABLE Restaurants
-            
-    RestaurantID SERIAL PRIMARY KEY, -- Unique identifier for each record
-    CreatedAt Date, -- Timestamp for record creation
-    username VARCHAR(50),
-    PlaceID VARCHAR(50) UNIQUE NOT NULL, -- Place ID from the API
-    Resturant_Name VARCHAR(100) NOT NULL, -- Name of the restaurant
-    City VARCHAR(100), -- City name for filtering
-    URL TEXT, -- Website URL
-    Rating FLOAT -- User Rating 
-);""")
+if geocode_result:
+    # Extract the location (latitude and longitude) from the first result.
+    location = geocode_result[0]['geometry']['location']
+    lat = location['lat']
+    lng = location['lng']
+    
+    
+  RestaurantID = con.execute("SELECT MAX(RestaurantID) from Restaurants").fetchone()
+  max_id = RestaurantID[0] if RestaurantID[0] is not None else 0  # Handle the case where the table is empty
+  id = max_id + 1
+  con.execute("""INSERT INTO Restaurants 
+      (RestaurantID, username, Restaurant_Type,Restaurant_Name, City,Description,latitude,longitude,Rating)
+  VALUES (?, ?, ?, ?, ?, ?, ?)""",
+              (row['id'],username,row['type'],row['name'],row['city'],row['description'], lat = location['lat'],lat = location['lng'],row['Rating']))
+  
+  
