@@ -1,6 +1,6 @@
 # Date-Recommender
 ## Abstact
-The Date-Recommender is a Python script that connects to a MySQL database, retrieves data, performs natural language processing (NLP), trains a machine learning model, and utilizes the Google Places API to fetch data about restaurants and bars. It then saves the processed data into JSON files and converts it into a DataFrame, then uploads the selected restaurant back into the database.
+The Date-Recommender is a Python script that connects to a Duck database, retrieves data, performs natural language processing (NLP), trains a machine learning model, and utilizes the Google Places API to fetch data about restaurants and bars. It then saves the processed data into JSON files and converts it into a DataFrame, then uploads the selected restaurant back into the database.
 
 ## Introduction
 The Date-Recommender is a tool designed for individuals who struggle with indecisiveness when choosing places to visit in a city. This model utilizes your previous ratings of places you've visited to generate personalized recommendations for new places to explore. The recommendations are based on your preferences and ratings, helping you discover exciting locations that align with your interests in a new city.
