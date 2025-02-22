@@ -34,10 +34,6 @@ con.execute("""
 
 
 
-exclude_df['CreatedAt'] = exclude_df['CreatedAt'].apply(lambda x: datetime.strptime(x, "%m/%d/%Y").strftime("%Y-%m-%d"))
-
-
-con.execute("Insert into Restaurants SELECT * FROM exclude_df")
             
             
 
