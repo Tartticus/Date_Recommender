@@ -17,9 +17,10 @@ from sklearn.metrics import accuracy_score, classification_report
 from datetime import datetime
 import os
 import gmaps
+import datetime
 nltk.download('punkt_tab')
 nltk.download('stopwords')
-print("imports complete")
+print("imports complete\n")
 
 
 
@@ -32,12 +33,12 @@ def pick_location():
     
     options = ['Dining','Dessert','Japanese','Ramen','Taiwanese','Bar','Italian']
         # Print available options
-    print("Please choose one of the following options:")
+    print("Please choose one of the following options:\n")
     for i, option in enumerate(options, 1):
         print(f"{i}. {option}")
     while True:   
         # Prompt the user for input
-        choice = input("Enter the number corresponding to your choice: ")
+        choice = input("Enter the number corresponding to your choice:\n ")
     
         # Validate the user's input
         if not choice.isdigit() or int(choice) < 1 or int(choice) > len(options):
@@ -45,7 +46,7 @@ def pick_location():
         
         else:
             selected_option = options[int(choice) - 1]
-            print(f"You selected: {selected_option}")    
+            print(f"You selected: {selected_option}\n")    
             break
       
     gmaps = googlemaps.Client(key=api_key)
@@ -64,7 +65,7 @@ def pick_location():
         
     try:
                 # Convert the selected city to coordinates
-                geocode_result = gmaps.geocode(selected_city)
+                geocode_result = gmaps_client.geocode(selected_city)
                 if geocode_result:
                     lat = geocode_result[0]['geometry']['location']['lat']
                     lng = geocode_result[0]['geometry']['location']['lng']
@@ -131,7 +132,7 @@ def Train_Model(df):
     df_string = df.to_string(index=False)
     print(df_string) 
     # Apply preprocessing to the 'description' column
-    df['processed_description'] = df['Description'].apply(preprocess_text)
+    text_processed = df['Description'].apply(preprocess_text)
     
     print(df)
     
@@ -142,7 +143,7 @@ def Train_Model(df):
     vectorizer = CountVectorizer()
     
     # Encode the preprocessed text data
-    X = vectorizer.fit_transform(df['processed_description'])
+    X = vectorizer.fit_transform(text_processed)
     y = df['score']
     
     # Split the data into training and testing sets
@@ -181,24 +182,24 @@ def Fetch_Restaurants(selected_city,selected_state):
     
     
     # Perform the place search in the selected city and state
-    places_result = gmaps.places(query=f'{selected_city}, {selected_state}')
-    geocode_result = gmaps.geocode(selected_city)
+    places_result = gmaps_client.places(query=f'{selected_city}, {selected_state}')
+    geocode_result = gmaps_client.geocode(selected_city)
     if geocode_result:
         lat = geocode_result[0]['geometry']['location']['lat']
         lng = geocode_result[0]['geometry']['location']['lng']
     
     # Search for restaurants in the selected city and state
-    restaurants_result = gmaps.places_nearby(type='restaurant', location= f"{lat},{lng}" , radius = 11519, open_now = True)
+    restaurants_result = gmaps_client.places_nearby(type='restaurant', location= f"{lat},{lng}" , radius = 11519, open_now = True)
     
     # Search for bars in the selected city and state
-    bars_result = gmaps.places_nearby(type='bar', location= f"{lat},{lng}" , radius = 11519, open_now = True)
+    bars_result = gmaps_client.places_nearby(type='bar', location= f"{lat},{lng}" , radius = 11519, open_now = True)
     
     # Extract restaurant information
     restaurants = restaurants_result['results']
     restaurant_data = []
     for restaurant in restaurants:
         place_id = restaurant['place_id']
-        place_details = gmaps.place(place_id=place_id, fields=['name', 'vicinity', 'reviews'])
+        place_details = gmaps_client.place(place_id=place_id, fields=['name', 'vicinity', 'reviews'])
         place_details = place_details['result']
         
         # Exclude restaurant if its name is in the excluded list
@@ -213,7 +214,7 @@ def Fetch_Restaurants(selected_city,selected_state):
         restaurant_data.append({
             'name': place_details['name'],
             'vicinity': place_details['vicinity'],
-            'reviews': review_data
+            'reviews': " ".join(review_data)
         })
     
     # Extract bar information
@@ -221,7 +222,7 @@ def Fetch_Restaurants(selected_city,selected_state):
     bar_data = []
     for bar in bars:
         place_id = bar['place_id']
-        place_details = gmaps.place(place_id=place_id, fields=['name', 'vicinity', 'reviews'])
+        place_details = gmaps_client.place(place_id=place_id, fields=['name', 'vicinity', 'reviews'])
         place_details = place_details['result']
         
         # Exclude bar if its name is in the excluded list
@@ -236,16 +237,14 @@ def Fetch_Restaurants(selected_city,selected_state):
         bar_data.append({
             'name': place_details['name'],
             'vicinity': place_details['vicinity'],
-            'reviews': review_data
+            'reviews': " ".join(review_data)
         })
     
-    
-    data = {
-        'restaurants': restaurant_data,
-        'bars': bar_data
-    }
-    conn.execute("INSERT INTO processing_restaurants SELECT * FROM data")
-    
+      
+    datadf = pd.DataFrame(restaurant_data)
+    datadf2 = pd.DataFrame(bar_data)
+    conn.execute("INSERT INTO processing_restaurants SELECT * FROM datadf")
+    conn.execute("INSERT INTO processing_restaurants SELECT * FROM datadf2")
     print(f"Data saved to Database")
 
 
@@ -254,12 +253,13 @@ def Reccomend_Restaurants(naive_bayes,vectorizer):
     model = naive_bayes
     
     restaurants_data = conn.execute("SELECT * FROM processing_restaurants").df()
-    
+    # Convert the index to integer (if it's not already)
+    restaurants_data.index = restaurants_data.index.astype(int)
     # Preprocess the restaurant reviews
     preprocessed_reviews = []
-    for restaurant in restaurants_data:
-        reviews = restaurant['reviews']
-        preprocessed_reviews.extend([preprocess_text(review) for review in reviews])
+    for idx, row in restaurants_data.iterrows():
+        reviews = row['reviews']
+        preprocessed_reviews.extend([preprocess_text(reviews)])
     
     # Vectorize the preprocessed reviews
     X_test = vectorizer.transform(preprocessed_reviews)
@@ -272,37 +272,25 @@ def Reccomend_Restaurants(naive_bayes,vectorizer):
     predicted_scores = [score_labels[pred] for pred in y_pred]
     
     # Update the restaurant data with predicted scores
-    for i, restaurant in enumerate(restaurants_data):
-        restaurant['predicted_score'] = predicted_scores[i]
+   
+    restaurants_data['predicted_score'] = predicted_scores
     
-    # Create the classified data
-    classified_data = {
-        'restaurants': restaurants_data,
-        
-    }
     
-    conn.execute("INSERT INTO processed_restaurants SELECT * FROM data")
+    datadf = restaurants_data
+    conn.execute("INSERT INTO processed_restaurants SELECT * FROM datadf")
      
-    print(f"Data saved to DB")
+    print(f"Data saved to DuckDB")
     
     
     
     
-    restaurants_data = conn.execute("SELECT * FROM processed_restaurants").df()
+    names = restaurants_data[['name','predicted_score']]
+        
     
-    # Create a list of dictionaries to store the restaurant data
-    restaurant_list = []
-    for restaurant in restaurants_data:
-        name = restaurant['name']
-        score = restaurant.get('predicted_score')
-        if score:  # Only include restaurants with a predicted score
-            restaurant_list.append({'name': name, 'predicted score': score})
     
-    # Convert the list of dictionaries to a DataFrame
-    df = pd.DataFrame(restaurant_list)
     
     # Print the DataFrame
-    print(df)
+    print(names)
     
     while True:
         # Prompt the user for input
@@ -312,10 +300,10 @@ def Reccomend_Restaurants(naive_bayes,vectorizer):
             # Validate the user's input
             choice_index = int(choice) - 1
 
-            if choice_index < 0 or choice_index >= len(df['name']):
+            if choice_index < 0 or choice_index >= len(names['name']):
                 print("Invalid choice. Please try again.")
             else:
-                selected_restaurant = df['name'][choice_index]
+                selected_restaurant = names['name'][choice_index]
                 print(f"You selected: {selected_restaurant}")
                 break
         except ValueError:
@@ -327,7 +315,7 @@ def Reccomend_Restaurants(naive_bayes,vectorizer):
 def insert_place_chosen(selected_restaurant,city):
     query = f"{selected_restaurant}, {city}"
     
-    find_response = gmaps.find_place(
+    find_response = gmaps_client.find_place(
         input=query,
         input_type="textquery",
         fields=['place_id', 'name']
@@ -338,11 +326,11 @@ def insert_place_chosen(selected_restaurant,city):
         
 
     # Take the first candidate from the results.
-    candidate = candidates[0]
+    candidate = candidates
     place_id = candidate.get('place_id')
     
     # Now retrieve detailed information using the Place Details API.
-    details_response = gmaps.place(
+    details_response = gmaps_client.place(
         place_id=place_id,
         fields=['name', 'formatted_address', 'reviews', 'url']
     )
@@ -363,26 +351,31 @@ CREATE TABLE IF NOT EXISTS processing_restaurants (
 );
 """
 )
+
 conn.execute("""
 CREATE TABLE IF NOT EXISTS processed_restaurants (
     name TEXT,
     vicinity TEXT,
     reviews TEXT,
-    predicted_score int
+    predicted_score TEXT
 );
 """
 )
-con = duckdb.connect(database='dining')
+con = duckdb.connect(database=r'C:/Users/Matth/Projects/Date_Recommender/dining')
 
 # Replace 'YOUR_API_KEY' with your actual API key
 api_key = os.getenv("Google_Places_API_Key")
-
+#create gmaps client
+gmaps_client = googlemaps.Client(key=api_key)
 def main():
     df, selected_city, state, lat, lng,username, Restaurant_Type = pick_location()
     naive_bayes, vectorizer = Train_Model(df)
     Fetch_Restaurants(selected_city,state)
     selected_restaurant= Reccomend_Restaurants(naive_bayes,vectorizer)
-    place_id, url = insert_place_chosen(selected_restaurant,selected_city)
+    try:
+        place_id, url = insert_place_chosen(selected_restaurant,selected_city)
+    except:
+        pass
     # Get the current date and time
     current_datetime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
