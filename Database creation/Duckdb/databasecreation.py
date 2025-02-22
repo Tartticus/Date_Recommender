@@ -22,7 +22,7 @@ con.execute("""
     RestaurantID INT PRIMARY KEY,
     CreatedAt Date, 
     Username VARCHAR(50),
-    Resturaant_Name VARCHAR(100) NOT NULL, 
+    Resturant_Name VARCHAR(100) NOT NULL, 
     City VARCHAR(100), 
     Type TEXT,
     Description TEXT,
