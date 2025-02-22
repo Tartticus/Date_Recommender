@@ -390,4 +390,5 @@ def main():
     
     print("Selected restaurant inserted into the database.")
 
-main()
+if __name__ == '__main__':
+    main()
