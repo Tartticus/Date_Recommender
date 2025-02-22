@@ -20,13 +20,15 @@ CREATE TABLE users (
 con.execute("""
             Create TABLE Restaurants
             
-    RestaurantID SERIAL PRIMARY KEY, -- Unique identifier for each record
+    RestaurantID INT PRIMARY KEY, -- Unique identifier for each record
     CreatedAt Date, -- Timestamp for record creation
     username VARCHAR(50),
     PlaceID VARCHAR(50) UNIQUE NOT NULL, -- Place ID from the API
     Resturant_Name VARCHAR(50)) NOT NULL, -- Name of the restaurant
     City VARCHAR(50), -- City name for filtering
-    State VARCHAR(50)
+    State VARCHAR(50),
+    latitude DOUBLE,
+    longitude DOUBLE,
     URL TEXT, -- Website URL
     Rating FLOAT -- User Rating 
 );""")
