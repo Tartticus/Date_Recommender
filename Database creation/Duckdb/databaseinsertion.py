@@ -22,7 +22,7 @@ con.execute("""
     CreatedAt Date, -- Timestamp for record creation
     username VARCHAR(50),
     PlaceID VARCHAR(50) UNIQUE NOT NULL, -- Place ID from the API
-    Resturaant_Name VARCHAR(100) NOT NULL, -- Name of the restaurant
+    Resturant_Name VARCHAR(100) NOT NULL, -- Name of the restaurant
     City VARCHAR(100), -- City name for filtering
     URL TEXT, -- Website URL
     Rating FLOAT -- User Rating 
