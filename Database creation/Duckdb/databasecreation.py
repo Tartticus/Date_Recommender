@@ -5,6 +5,7 @@ from datetime import datetime
 con = duckdb.connect(database='dining')
 
 # Create a table
+
 con.execute("""
 CREATE TABLE users (
     user_id INT PRIMARY KEY,
@@ -13,21 +14,23 @@ CREATE TABLE users (
     email VARCHAR
 );
 """
-)
+
 
 
 con.execute("""
-            Create TABLE Restaurants (
+            Create TABLE Restaurants
             
-    RestaurantID INT PRIMARY KEY,
-    CreatedAt Date, 
-    Username VARCHAR(50),
-    Resturant_Name VARCHAR(100) NOT NULL, 
-    City VARCHAR(100), 
-    Type TEXT,
-    Description TEXT,
-    UserRating FLOAT 
+    RestaurantID SERIAL PRIMARY KEY, -- Unique identifier for each record
+    CreatedAt Date, -- Timestamp for record creation
+    username VARCHAR(50),
+    PlaceID VARCHAR(50) UNIQUE NOT NULL, -- Place ID from the API
+    Resturant_Name VARCHAR(50)) NOT NULL, -- Name of the restaurant
+    City VARCHAR(50), -- City name for filtering
+    State VARCHAR(50)
+    URL TEXT, -- Website URL
+    Rating FLOAT -- User Rating 
 );""")
+
 
 
 
